@@ -1,13 +1,22 @@
 from flask import request,abort
 from flask_restful import Resource
-from modelos import db, Blacklist, BlacklistSchema
-#from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
+from src.modelos import db, Blacklist, BlacklistSchema
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity,get_jwt
+
 
 
 blacklist_schema = BlacklistSchema()
 
+
+class ObtenerToken(Resource):
+
+    def get(self):
+        token_de_acceso = create_access_token(identity=1)
+        return {"token": token_de_acceso}
+
 class RegistrarEmail(Resource):
     
+    @jwt_required()
     def post(self):
     
         if request.json == None or not "email" in request.json or not "app_uuid" in request.json:
@@ -31,14 +40,15 @@ class RegistrarEmail(Resource):
             
 class ConsultarEmail(Resource):
     
+    @jwt_required()
     def get(self, email):
         resultado = Blacklist.query.filter(Blacklist.email == email).all()
         if len(resultado) == 0:
-            return {"mensaje": "El correo no se encuentra en la lista negra"}, 200
+            return {"boolean":False,"mensaje":"El correo no se encuentra en la lista negra"}, 200
         else:
             respuesta = {}
             for tarea in resultado:
-                respuesta.update({"tarea":tarea.blocked_reason})
+                respuesta.update({"Boolean":True,"mensaje":"El correo se encuentra en la lista negra","Motivo":tarea.blocked_reason})
             return respuesta , 200
            
 
